@@ -1,0 +1,255 @@
+---
+title: "Choosing the right university"
+subtitle: "Final Independent Project for Computer Modeling Class BIOL 551"
+author: "Lipi Patel"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE,
+	fig.height = 12,
+	fig.width = 9,
+	fig.align = "center"
+)
+```
+
+
+## Data sets used
+
+I am going to work with one of the Tidy Tuesday data sets, **Tuition, diversity and pay.** It consists of many data sets, however, I will be focusing on only three of them:
+
+* _historical_tuition_
+
+* _tuition_cost_
+
+* _salary_potential_
+
+
+
+## Questions to be answered using the data sets mentioned above
+
+- **Question #1:** How has the cost of tuition in public and private institutions changed over the years?
+
+- **Question #2:** How do the institutions in different states differ in their fees, for example, room and board, in-state tuition fees, out-of-state tuition fees, or even total fees? 
+
+- **Question #3:** What percentage of students are enrolled in STEM courses in the institutions of a particular state, for example, **California**?
+
+
+### Load the libraries
+```{r warning=FALSE}
+library(tidyverse)
+library(here)
+library(tidytuesdayR)
+library(tidyr)
+library(dbplyr)
+library(ggplot2)
+library(ggthemes)
+library(patchwork)
+library(flair)
+```
+
+### Load and read in the data
+```{r warning=FALSE}
+historical_tuition <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/historical_tuition.csv')
+head(historical_tuition)
+
+tuition_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/tuition_cost.csv')
+head(tuition_cost)
+
+salary_potential <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/salary_potential.csv')
+head(salary_potential)
+
+```
+
+## OUTPUT 1: Variation in tuition cost of Private and Public institutions 
+
+### Filter the data: **historical_tuition**
+_This is to keep only private and public type, and summarise by taking the average of tuition cost._
+```{r}
+
+filtered_tuition <- historical_tuition %>% # creates a new df and opens historical_tuition
+  separate(col = year, # chooses this column, year
+         into = c("year","year_2"), # separates it into two columns: year and year_2
+         sep = "-", # separated by -
+         remove = TRUE) %>% # removes the original column
+  filter(type == c("Public", "Private")) %>% # keeps only public and private type
+  select(type, year, tuition_cost) %>% # selects these variables to add in new df, filtered_tuition
+  group_by(type, year) %>% # groups by type and year
+  summarise_at(vars(tuition_cost), list(mean_tuition = mean)) %>% # calculates mean tuition cost and names the new column as mean_tuition
+  drop_na(mean_tuition, year) # removes empty values
+head(filtered_tuition) # shows the new df
+
+```
+
+### Create plot #1: Variation in tuition cost of Private and Public schools from 1985-2016
+
+**Year Vs Tuition cost (in USD)**
+
+```{r, fig.cap= "This graph depicts the variation in tuition cost of private and public institutions from 1985-2016", fig.align='center'}
+decorate('
+         ggplot(filtered_tuition, # uses this df
+         mapping = aes(x = year,
+         y = mean_tuition, 
+         color = type, 
+         group = type)) + # assigns x and y axes
+         geom_line() + # chooses a type of geom
+         geom_point() + # adding a geom layer for better visualization
+         labs(x = "Year", 
+         y = "Tuition cost (in USD)", 
+         title = "Variation in tuition cost of Private and Public schools from 1985-2016") + # adding labels to axes and title
+         theme(plot.title = element_text(hjust = 0), # aligns the plot title to left
+         title = element_text(face= "bold")) + # converts the text to bold
+         scale_y_continuous(breaks = c(5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000)) + # custom values for y axis
+         theme_grey()') %>% # choooses this theme
+  flair_args(color = "cornflowerblue") %>% # colors the arguments
+  flair_funs(color = "coral", underline = TRUE) %>% # colors and underlines the functions
+  flair_input_vals(background = "turquoise") # colors the values assigned to function arguments 
+```
+
+### Save plot #1
+```{r}
+ggsave(here("Output","Variation in tuition.png"),
+       width = 7, height = 5) # in inches)
+```
+
+## OUTPUT 2: State-wise comparison of in-state and out-of-state fees
+
+### Filter the data: **tuition_cost**
+_This is to keep private and public types only and summarise by taking mean of all the types of fees like room and board, in-state and out-of-state tuition, etc._
+```{r}
+total_fees <- tuition_cost %>% # creates a new df, total_fees, and opens tuition_cost
+  drop_na() %>% #filters out everything that is not a complete row
+  dplyr::filter(type == c("Private", "Public")) %>% # specify dplyr:: if it says object'x' not found
+  select(state, type, room_and_board, in_state_tuition, out_of_state_tuition, in_state_total, out_of_state_total) %>% # selects these column
+  group_by(state, type) %>% # groups them
+  summarise(mean_room_and_board = mean(room_and_board, na.rm = TRUE), # calculates mean of living cost
+            mean_in_state_total = mean(in_state_total, na.rm = TRUE), # calculates mean of in_state total fees
+            mean_out_state_total = mean(out_of_state_total, na.rm = TRUE), # calculates mean of out_of_state total fees
+            mean_in_state_tuition = mean(in_state_tuition, na.rm = TRUE), # calculates mean of in_state tuition
+            mean_out_state_tuition = mean(out_of_state_tuition, na.rm = TRUE)) # calculates mean of in_state tuition
+head(total_fees) # shows the new df
+```
+
+### Create plot #2:
+
+**State Vs Type of fees (in USD)**
+
+```{r, fig.cap="This plot depicts the state-wise comparison of in-state and out-of-state fees"}
+
+### A: Create a function to enter the type of fees that you wish to compare between different states.
+
+decorate('
+         plot_fees <- function(y){ # creates a new function for "y"
+         ggplot(total_fees, # chooses this df
+         mapping = aes(x = state, 
+         y = {{y}}, 
+         fill = type,
+         group = type)) + # assigning x and y axes
+         geom_col() + # choose a type of geom
+         coord_flip() +
+         theme_grey() + # sets this theme
+         # theme(axis.text.x = element_text(angle = 45, vjust=0.8, hjust=0.8)) + # adjusting the size and position of labels on x axis
+         theme(title = element_text(face= "bold")) # makes the title bold
+         }
+
+         
+### B: Name the first plot as "p1" and second as "p2" and add axes labels to each so that it makes it easier to compare. 
+
+## For example, I have used:
+#  i. mean_in_state_total
+p1 <- plot_fees(mean_in_state_total) +
+labs(x = "State", 
+     y = "In-state fees (in USD)")
+
+# ii. mean_out_state_total
+p2 <- plot_fees(mean_out_state_total) +
+labs(x = "State", 
+     y = "Out-of-state fees (in USD)")
+
+
+### C: Use "patchwork" to combine them in a single picture.
+p1+p2 +
+plot_layout(guides = "collect") + # groups the legends together
+plot_annotation(title = "State-wise comparison of in-state and out-of-state fees") +
+theme(plot.title.position = "plot") # aligns the title to center
+  ') %>%
+  flair_args(color = "cornflowerblue") %>% # colors all the arguments
+  flair_funs(color = "coral", underline = TRUE) %>% # colors and underlines all the functions
+  flair_input_vals(background = "turquoise") # colors the values assigned to function arguments 
+```
+
+#### Similarly, any other variables in the df can be used to compare by just inputting the value for y and adding labels to the plot.
+
+
+### Save plot #2
+```{r}
+ggsave(here("Output","Total fees in public & private institutions of the US.png"),
+       width = 12, height = 9) # in inches)
+```
+
+## OUTPUT 3: Percentage of students enrolled in STEM fields in Californian institutions
+
+### Filter data: **salary_potential**
+_This is to keep the data only for the state of California. Similarly, data for other states can be examined by filtering the state of interest._
+
+```{r}
+stem_data <- salary_potential %>% # creates new df, stem_data and opens salary_potential df
+  drop_na(stem_percent) %>% # removes empty values
+  select(name, state_name, stem_percent) %>% # selects these variables for new df
+  filter(state_name == "California") %>% # filters to keep only Californian institutions
+  group_by(state_name) # groups by state_name
+head(stem_data) # shows new df
+```
+
+### Create Graph #3:
+
+**Percentage Vs Name of the institutions**
+
+```{r, fig.cap="This graph depicts the percentage of students enrolled in STEM courses in Californian institutions", fig.align='center', fig.height= 8, fig.width= 10, warning=FALSE}
+decorate('
+         ggplot(stem_data, # uses this df to create ggplot
+       aes(x = stem_percent, 
+           y = name)) + # assigns x and y axes
+         geom_col(show.legend = FALSE, 
+                  position = "dodge", 
+                  stat = "identity", 
+                  fill = "deepskyblue1") + # chooses the geom, no legends
+       geom_text(aes(label = stem_percent), vjust = 0.5, hjust = -0.5, color = "coral") +
+         labs(x = "% STEM students", 
+              y = "Name of the institutions", 
+              title = "% of students enrolled in STEM fields in California") + # adds labels to the axes and title
+         theme(plot.title = element_text(hjust = 0)) + # aligns plot title
+         theme_grey() # chooses this theme
+         ') %>%
+  flair_args(color = "cornflowerblue") %>% # colors all the arguments
+  flair_funs(color = "coral", underline = TRUE) %>% # colors all the functions
+  flair_input_vals(background = "turquoise") # colors the values assigned to function arguments 
+
+```
+
+#### Save plot #3
+```{r}
+ggsave(here("Output","STEM in California.png"),
+       width = 10, height = 8) # in inches)
+```
+
+Refer to the readme file to know about other categories that can be compared and evaluated to choose the best university to pursue your education. These are some of the data files that were not covered by me:
+
+- _tuition_income_ : Contains data for net amount of tuition that is paid after deducting on and off campus scholarships
+- _diversity_school_ : Contains data on the number of students belonging to different racial communities have been accepted to these institutions
+
+## Start researching ahead of time!
+
+
+## Thank you!
