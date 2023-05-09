@@ -5,7 +5,7 @@ This repository contains all the information about my independent project for Co
 
 ![](https://opportunitydesk.org/wp-content/uploads/2019/08/7-Guidelines-for-Choosing-the-Most-Suitable-College.png)
 
-Being an international student, it was quite difficult for me to choose which university is the best for pursuing my education. There are many websites available online that can guide you, however, if the data from multiple sources is put together, it will enhance your search of universities. This is exactly what I have done for my independent project. 
+College tuition data is somewhat difficult to find - with many sites limiting it to online tools. Being an international student, it was quite difficult for me to choose which university is the best for pursuing my education. There are many websites available online that can guide you, however, if the data from multiple sources is put together, it will enhance your search of universities. This is exactly what I have done for my independent project. 
 
 
 ### Data and Source of data
@@ -81,5 +81,13 @@ OUTPUT 3: Percentage of students enrolled in STEM fields in Californian institut
 - Filter to remove unwanted variables
 - Create a ggplot
 - Save it in Output folder
+
+### Additional references
+- Github link for the data: https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10
+- Diversity by college/university for 2014, along with school type, degree length, state, in-state vs out-of-state from the Chronicle of Higher Education.
+- Example diversity graphics from Priceonomics.
+- Average net cost by income bracket from TuitionTracker.org.
+- Example price trend and graduation rates from TuitionTracker.org
+
 
 ### Thank you!
